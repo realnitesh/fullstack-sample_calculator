@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Calculator - Frontend</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <div class="calculator">
+            <div class="header">
+                <h1><i class="fab fa-python"></i> Python Calculator</h1>
+                <p>Frontend connected to Python Backend API</p>
+                <div class="connection-status" id="connection-status">
+                    <i class="fas fa-circle"></i>
+                    <span>Checking connection...</span>
+                </div>
+            </div>
+            
+            <div class="display">
+                <div class="previous-operand" id="previous-operand"></div>
+                <div class="current-operand" id="current-operand">0</div>
+            </div>
+            
+            <div class="buttons">
+                <button class="btn btn-clear" onclick="calculator.clear()">C</button>
+                <button class="btn btn-delete" onclick="calculator.delete()">
+                    <i class="fas fa-backspace"></i>
+                </button>
+                <button class="btn btn-operator" onclick="calculator.chooseOperation('÷')">÷</button>
+                <button class="btn btn-operator" onclick="calculator.chooseOperation('×')">×</button>
+                
+                <button class="btn btn-number" onclick="calculator.appendNumber('7')">7</button>
+                <button class="btn btn-number" onclick="calculator.appendNumber('8')">8</button>
+                <button class="btn btn-number" onclick="calculator.appendNumber('9')">9</button>
+                <button class="btn btn-operator" onclick="calculator.chooseOperation('-')">-</button>
+                
+                <button class="btn btn-number" onclick="calculator.appendNumber('4')">4</button>
+                <button class="btn btn-number" onclick="calculator.appendNumber('5')">5</button>
+                <button class="btn btn-number" onclick="calculator.appendNumber('6')">6</button>
+                <button class="btn btn-operator" onclick="calculator.chooseOperation('+')">+</button>
+                
+                <button class="btn btn-number" onclick="calculator.appendNumber('1')">1</button>
+                <button class="btn btn-number" onclick="calculator.appendNumber('2')">2</button>
+                <button class="btn btn-number" onclick="calculator.appendNumber('3')">3</button>
+                <button class="btn btn-equals" onclick="calculator.compute()" rowspan="2">=</button>
+                
+                <button class="btn btn-number btn-zero" onclick="calculator.appendNumber('0')">0</button>
+                <button class="btn btn-number" onclick="calculator.appendNumber('.')">.</button>
+                <button class="btn btn-operator" onclick="calculator.chooseOperation('^')">^</button>
+            </div>
+            
+            <div class="history-section">
+                <div class="history-header">
+                    <h3><i class="fas fa-history"></i> History</h3>
+                    <button class="btn btn-clear-history" onclick="calculator.clearHistory()">
+                        <i class="fas fa-trash"></i> Clear
+                    </button>
+                </div>
+                <div class="history-list" id="history-list">
+                    <p class="no-history">No calculations yet</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="api-info">
+            <div class="info-card">
+                <h3><i class="fas fa-server"></i> Backend API</h3>
+                <p>This frontend connects to a Python Flask API backend</p>
+                <div class="api-endpoints">
+                    <div class="endpoint">
+                        <span class="method post">POST</span>
+                        <span class="path">/calculate</span>
+                    </div>
+                    <div class="endpoint">
+                        <span class="method get">GET</span>
+                        <span class="path">/history</span>
+                    </div>
+                    <div class="endpoint">
+                        <span class="method post">POST</span>
+                        <span class="path">/clear_history</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="info-card">
+                <h3><i class="fas fa-code"></i> Python Backend</h3>
+                <p>All calculations are processed by the Python calculator class</p>
+                <div class="features">
+                    <div class="feature">
+                        <i class="fas fa-check"></i>
+                        <span>Server-side processing</span>
+                    </div>
+                    <div class="feature">
+                        <i class="fas fa-check"></i>
+                        <span>Persistent history</span>
+                    </div>
+                    <div class="feature">
+                        <i class="fas fa-check"></i>
+                        <span>Error handling</span>
+                    </div>
+                    <div class="feature">
+                        <i class="fas fa-check"></i>
+                        <span>REST API</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
+

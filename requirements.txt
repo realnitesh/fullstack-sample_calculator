@@ -1,0 +1,10 @@
+# Simple Calculator API Backend Requirements
+# REST API backend only
+
+Flask==2.3.3
+Flask-CORS==4.0.0
+Werkzeug==2.3.7
+requests==2.31.0
+
+# Python version requirement
+# Python 3.6 or higher recommended
