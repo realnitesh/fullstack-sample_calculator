@@ -5,9 +5,21 @@ class Calculator {
         this.currentOperand = '';
         this.operation = undefined;
         this.history = [];
+
         const defaultApiUrl = 'http://localhost:5000';
+        const origin = window.location.origin || '';
         const isHttpProtocol = window.location.protocol.startsWith('http');
-        this.apiBaseUrl = isHttpProtocol ? window.location.origin : defaultApiUrl;
+
+        // When served by Flask directly (http://localhost:5000) use same origin.
+        // When served by a separate frontend container (e.g. http://localhost:8080),
+        // talk to the backend on http://localhost:5000 (mapped from Docker).
+        if (isHttpProtocol && origin.includes('8080')) {
+            this.apiBaseUrl = 'http://localhost:5000';
+        } else if (isHttpProtocol) {
+            this.apiBaseUrl = origin;
+        } else {
+            this.apiBaseUrl = defaultApiUrl;
+        }
         this.isConnected = false;
         
         // Initialize connection check

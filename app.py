@@ -5,7 +5,9 @@ Provides REST API endpoints for calculator operations.
 """
 
 from pathlib import Path
+import os
 
+import psycopg2
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 
@@ -20,8 +22,42 @@ app.secret_key = 'your-secret-key-here'
 # Enable CORS for all routes
 CORS(app)
 
-# Initialize calculator instance
+# Initialize calculator instance (still used for core math/CLI)
 calc = Calculator()
+
+
+def get_db_connection():
+    """Create a new database connection using environment variables."""
+    return psycopg2.connect(
+        host=os.getenv("DB_HOST", "db"),
+        port=os.getenv("DB_PORT", "5432"),
+        dbname=os.getenv("DB_NAME", "calculator_db"),
+        user=os.getenv("DB_USER", "calculator_user"),
+        password=os.getenv("DB_PASSWORD", "calculator_pass"),
+    )
+
+
+def init_db():
+    """Ensure the calculations table exists."""
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS calculations (
+                id SERIAL PRIMARY KEY,
+                expression TEXT NOT NULL,
+                result DOUBLE PRECISION,
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            );
+            """
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+    except Exception as exc:
+        # Log to stdout; app can still run but history endpoints will fail
+        print(f"[WARN] Failed to initialize database: {exc}")
 
 @app.route('/')
 def serve_frontend():
@@ -53,6 +89,17 @@ def api_documentation():
         'usage': 'Send POST requests to /calculate with operation, operand1, operand2'
     })
 
+def _operation_symbol(operation: str) -> str:
+    """Map backend operation name to human-readable symbol."""
+    return {
+        "add": "+",
+        "subtract": "-",
+        "multiply": "×",
+        "divide": "÷",
+        "power": "^",
+    }.get(operation, "?")
+
+
 @app.route('/calculate', methods=['POST', 'GET'])
 def calculate():
     """API endpoint for calculator operations."""
@@ -69,31 +116,58 @@ def calculate():
             operand2 = float(request.args.get('operand2', 0))
         
         result = None
-        error = None
-        
-        # Perform calculation based on operation
+
+        # Perform calculation based on operation (reuse Calculator for math only)
         if operation == 'add':
-            result = calc.add(operand1, operand2)
+            result = operand1 + operand2
         elif operation == 'subtract':
-            result = calc.subtract(operand1, operand2)
+            result = operand1 - operand2
         elif operation == 'multiply':
-            result = calc.multiply(operand1, operand2)
+            result = operand1 * operand2
         elif operation == 'divide':
             if operand2 == 0:
-                error = "Cannot divide by zero!"
-            else:
-                result = calc.divide(operand1, operand2)
+                return jsonify({'error': "Cannot divide by zero!"}), 400
+            result = operand1 / operand2
         elif operation == 'power':
-            result = calc.power(operand1, operand2)
+            result = operand1 ** operand2
         else:
-            error = "Invalid operation"
-        
-        if error:
-            return jsonify({'error': error}), 400
-        
+            return jsonify({'error': "Invalid operation"}), 400
+
+        # Build history expression string and persist to DB
+        expression = f"{operand1} {_operation_symbol(operation)} {operand2} = {result}"
+
+        try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+            cur.execute(
+                "INSERT INTO calculations (expression, result) VALUES (%s, %s);",
+                (expression, result),
+            )
+            conn.commit()
+            cur.close()
+            conn.close()
+        except Exception as db_exc:
+            # Don't fail the calculation if history persistence fails
+            print(f"[WARN] Failed to save calculation to DB: {db_exc}")
+
+        # Fetch latest history from DB
+        history = []
+        try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+            cur.execute(
+                "SELECT expression FROM calculations ORDER BY id DESC LIMIT 10;"
+            )
+            rows = cur.fetchall()
+            history = [row[0] for row in rows]
+            cur.close()
+            conn.close()
+        except Exception as db_exc:
+            print(f"[WARN] Failed to load history from DB: {db_exc}")
+
         return jsonify({
             'result': result,
-            'history': calc.get_history()
+            'history': history
         })
         
     except Exception as e:
@@ -103,7 +177,16 @@ def calculate():
 def get_history():
     """Get calculation history."""
     try:
-        return jsonify({'history': calc.get_history()})
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT expression FROM calculations ORDER BY id DESC LIMIT 50;"
+        )
+        rows = cur.fetchall()
+        history = [row[0] for row in rows]
+        cur.close()
+        conn.close()
+        return jsonify({'history': history})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -111,7 +194,12 @@ def get_history():
 def clear_history():
     """Clear calculation history."""
     try:
-        calc.clear_history()
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("DELETE FROM calculations;")
+        conn.commit()
+        cur.close()
+        conn.close()
         return jsonify({'message': 'History cleared successfully'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
