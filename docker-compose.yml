@@ -1,0 +1,54 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: calculator-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-calculator_db}
+      POSTGRES_USER: ${POSTGRES_USER:-calculator_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-calculator_pass}
+    volumes:
+      - calculator_db_data:/var/lib/postgresql/data
+    networks:
+      - calculator-net
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: calculator-backend
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB:-calculator_db}
+      DB_USER: ${POSTGRES_USER:-calculator_user}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-calculator_pass}
+    depends_on:
+      - db
+    ports:
+      - "5000:5000"
+    networks:
+      - calculator-net
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: calculator-frontend
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+    networks:
+      - calculator-net
+
+networks:
+  calculator-net:
+    driver: bridge
+
+volumes:
+  calculator_db_data:
+    driver: local
+
+

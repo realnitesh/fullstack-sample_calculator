@@ -235,6 +235,9 @@ simple-calculator-app/
 ├── script.js          # Frontend logic and API calls
 ├── test_connection.py # API testing script
 ├── requirements.txt   # Python dependencies
+├── Dockerfile.backend # Dockerfile for backend API service
+├── Dockerfile.frontend# Dockerfile for static frontend service
+├── docker-compose.yml # Compose file orchestrating frontend, backend, and DB
 └── README.md          # Project documentation (this file)
 ```
 
@@ -246,6 +249,51 @@ Run the test script to verify core API functionality:
 
 ```bash
 python test_connection.py
+```
+
+---
+
+## Running with Docker and Docker Compose
+
+You can run the full stack (frontend + backend + PostgreSQL) using Docker.
+
+### 1. Build images
+
+From the project root:
+
+```bash
+docker-compose build
+```
+
+### 2. Start all services
+
+```bash
+docker-compose up
+```
+
+or in the background:
+
+```bash
+docker-compose up -d
+```
+
+### 3. Access the app
+
+- Frontend UI: `http://localhost:8080`
+- Backend API: `http://localhost:5000` (e.g., `/health`, `/api`, `/calculate`, `/history`)
+
+The frontend container serves the static files via Nginx, and the backend container exposes the Flask API. The database container runs PostgreSQL and is used for calculation history storage.
+
+### 4. Stopping the stack
+
+```bash
+docker-compose down
+```
+
+To also remove volumes (erasing DB data):
+
+```bash
+docker-compose down -v
 ```
 
 ---
